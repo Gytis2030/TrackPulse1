@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Analysis {
+  id          String   @id @default(cuid())
+  filename    String
+  createdAt   DateTime @default(now())
+  bpm         Int
+  estimatedKey String
+  energy      Float
+  spectralCentroid Float
+  bassIntensity Float
+  duration    Float
+  moodTags    String[]
+  trendScore  Float
+}

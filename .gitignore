@@ -1,0 +1,7 @@
+node_modules
+.next
+*.pyc
+__pycache__
+.env
+frontend/.env.local
+frontend/data/analyses.json

@@ -1,0 +1,7 @@
+{
+  "name": "trackpulse-monorepo",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ]
+}

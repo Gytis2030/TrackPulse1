@@ -1,0 +1,23 @@
+version: '3.9'
+services:
+  frontend:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: sh -c "npm install && npm run dev --workspace frontend"
+    ports:
+      - '3000:3000'
+    environment:
+      - AUDIO_SERVICE_URL=http://audio-service:8000/analyze
+    depends_on:
+      - audio-service
+
+  audio-service:
+    image: python:3.11
+    working_dir: /app
+    volumes:
+      - ./audio-service:/app
+    command: sh -c "pip install -r requirements.txt && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    ports:
+      - '8000:8000'
