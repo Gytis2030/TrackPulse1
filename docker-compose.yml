@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: trackpulse-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: trackpulse
+      POSTGRES_USER: trackpulse
+      POSTGRES_PASSWORD: trackpulse
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  audio-service:
+    build:
+      context: ./audio-service
+      dockerfile: Dockerfile
+    container_name: trackpulse-audio-service
+    restart: unless-stopped
+    env_file:
+      - ./audio-service/.env.example
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: trackpulse-frontend
+    restart: unless-stopped
+    env_file:
+      - ./frontend/.env.example
+    environment:
+      NEXT_PUBLIC_AUDIO_SERVICE_URL: http://audio-service:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - audio-service
+
+volumes:
+  postgres_data:

@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  tracks    Track[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Track {
+  id             String         @id @default(cuid())
+  title          String
+  artistName     String
+  userId         String
+  trendScore     Float          @default(0)
+  uploadStatus   UploadStatus   @default(PENDING)
+  analysis       AudioAnalysis?
+  styleMatches   ArtistMatch[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AudioAnalysis {
+  id          String   @id @default(cuid())
+  trackId      String   @unique
+  tempoBpm    Float
+  energy      Float
+  danceability Float
+  valence     Float
+  createdAt   DateTime @default(now())
+
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+}
+
+model ArtistMatch {
+  id          String   @id @default(cuid())
+  trackId     String
+  artistName  String
+  similarity  Float
+
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([trackId])
+}
+
+enum UploadStatus {
+  PENDING
+  ANALYZED
+  FAILED
+}
