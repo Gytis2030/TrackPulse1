@@ -1,24 +1,34 @@
-# TrackPulse Monorepo Scaffold
+# TrackPulse Monorepo MVP
 
-TrackPulse is an MVP SaaS foundation for music producers and small music companies. This repository currently focuses on a clean, runnable structure (not full product features yet).
+TrackPulse is a production-oriented MVP SaaS foundation for music producers and small music companies.
 
-## What is included
+## Included apps
 
-- `frontend/`: Next.js 14 + TypeScript + Tailwind CSS app scaffold
-- `audio-service/`: FastAPI service scaffold for deterministic audio-analysis responses
-- `prisma/`: initial PostgreSQL schema for users, tracks, analyses, and artist matches
-- `docker-compose.yml`: local development services for Postgres, frontend, and audio-service
-- root workspace scripts in `package.json`
-- `.env.example` files for root, frontend, and audio-service
+- `frontend/`: Next.js 14 + TypeScript + Tailwind app with founder-demo UX
+- `audio-service/`: FastAPI deterministic audio feature service
+- `prisma/`: PostgreSQL schema for users, tracks, analyses, and artist matches
+- `docker-compose.yml`: local orchestration for frontend, audio-service, and Postgres
 
-## Prerequisites
+## Core MVP flow implemented
 
-Install locally:
+- Premium landing page (`/`)
+- Upload page with audio file submission (`/upload`)
+- Analysis result page with trend score + artist-style matches (`/analysis/[id]`)
+- Dashboard page with recent analyses and aggregate stats (`/dashboard`)
+- Frontend API route that forwards upload requests to FastAPI (`/api/analyze`)
+- In-memory analysis store abstraction that can later be swapped with Prisma persistence
 
-- Node.js 20+
-- npm 10+
-- Python 3.11+
-- Docker + Docker Compose (optional, for containerized run)
+## Audio feature payload
+
+`POST /analyze` returns deterministic values for:
+
+- `bpm`
+- `estimated_key`
+- `energy`
+- `spectral_centroid`
+- `bass_intensity_proxy`
+- `duration`
+- `mood_tags`
 
 ## Local setup (without Docker)
 
@@ -42,8 +52,6 @@ Install locally:
    npm run dev:frontend
    ```
 
-   Frontend starts at http://localhost:3000
-
 4. Run the audio service in a separate terminal:
 
    ```bash
@@ -53,45 +61,22 @@ Install locally:
    uvicorn audio-service.app.main:app --host 0.0.0.0 --port 8000 --reload
    ```
 
-   Audio service starts at http://localhost:8000 and exposes:
-   - `GET /health`
-   - `POST /analyze`
-
 ## Local setup (Docker Compose)
 
-1. Build and start all services:
+```bash
+docker compose up --build
+```
 
-   ```bash
-   docker compose up --build
-   ```
+Services:
 
-2. Access services:
-   - Frontend: http://localhost:3000
-   - Audio service: http://localhost:8000
-   - PostgreSQL: `localhost:5432` (`trackpulse`/`trackpulse`)
-
-3. Stop services:
-
-   ```bash
-   docker compose down
-   ```
+- Frontend: http://localhost:3000
+- Audio service: http://localhost:8000
+- PostgreSQL: `localhost:5432` (`trackpulse`/`trackpulse`)
 
 ## Validation commands
-
-Run these from repository root:
 
 ```bash
 npm run lint --workspace frontend
 npm run build --workspace frontend
 python -m compileall audio-service/app
 ```
-
-## Current status
-
-This scaffold intentionally keeps logic simple and deterministic for quick iteration:
-
-- UI landing page placeholder
-- deterministic audio analysis response payload
-- initial Prisma schema + seed SQL
-
-Future iterations will add upload flow, trend scoring pipeline, artist-style matching, and dashboard insights.
