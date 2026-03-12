@@ -8,54 +8,239 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  tracks    Track[]
+  id              String         @id @default(cuid())
+  email           String         @unique
+  emailVerified   DateTime?
+  name            String?
+  image           String?
+  accounts        Account[]
+  sessions        Session[]
+  subscriptions   Subscription[]
+  uploadedTracks  UploadedTrack[]
+  usageEvents     UsageEvent[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
-model Track {
-  id             String         @id @default(cuid())
-  title          String
-  artistName     String
-  userId         String
-  trendScore     Float          @default(0)
-  uploadStatus   UploadStatus   @default(PENDING)
-  analysis       AudioAnalysis?
-  styleMatches   ArtistMatch[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
-model AudioAnalysis {
-  id          String   @id @default(cuid())
-  trackId      String   @unique
-  tempoBpm    Float
-  energy      Float
-  danceability Float
-  valence     Float
-  createdAt   DateTime @default(now())
+model Subscription {
+  id               String             @id @default(cuid())
+  userId           String
+  plan             SubscriptionPlan
+  status           SubscriptionStatus @default(TRIALING)
+  billingCycle     BillingCycle       @default(MONTHLY)
+  currentPeriodEnd DateTime?
+  cancelAt         DateTime?
+  canceledAt       DateTime?
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 
-  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  @@index([userId, status])
 }
 
-model ArtistMatch {
-  id          String   @id @default(cuid())
-  trackId     String
-  artistName  String
-  similarity  Float
+model UploadedTrack {
+  id               String           @id @default(cuid())
+  userId           String
+  title            String
+  artistName       String
+  fileName         String
+  fileUrl          String
+  durationSeconds  Int?
+  uploadedAt       DateTime         @default(now())
+  processingStatus ProcessingStatus @default(PENDING)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  audioFeatures    AudioFeatures?
+  analysisReports  AnalysisReport[]
+  usageEvents      UsageEvent[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
-  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
-
-  @@index([trackId])
+  @@index([userId, uploadedAt])
+  @@index([processingStatus])
 }
 
-enum UploadStatus {
+model AudioFeatures {
+  id                String        @id @default(cuid())
+  uploadedTrackId   String        @unique
+  bpm               Float
+  musicalKey        String?
+  energy            Float
+  danceability      Float
+  valence           Float
+  loudnessDb        Float?
+  speechiness       Float?
+  acousticness      Float?
+  instrumentalness  Float?
+  liveness          Float?
+  spectralCentroid  Float?
+  bassIntensity     Float?
+  moodTags          String[]
+  featureVector     Float[]
+  extractedAt       DateTime      @default(now())
+  uploadedTrack     UploadedTrack @relation(fields: [uploadedTrackId], references: [id], onDelete: Cascade)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}
+
+model TrendSignal {
+  id           String   @id @default(cuid())
+  source       String
+  genre        String
+  bpmRangeMin  Int
+  bpmRangeMax  Int
+  tags         String[]
+  growthScore  Float
+  signalDate   DateTime
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([genre, signalDate])
+  @@index([source, signalDate])
+}
+
+model TrendCluster {
+  id                    String           @id @default(cuid())
+  name                  String
+  genre                 String
+  description           String?
+  centroidFeatures      Json
+  centroidFeatureVector Float[]
+  sampleSize            Int              @default(0)
+  activeFrom            DateTime?
+  activeTo              DateTime?
+  analysisReports       AnalysisReport[]
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@unique([name, genre])
+  @@index([genre])
+}
+
+model ArtistProfile {
+  id                    String           @id @default(cuid())
+  name                  String           @unique
+  genre                 String
+  eraTag                String?
+  bpmRangeMin           Int?
+  bpmRangeMax           Int?
+  styleTags             String[]
+  profileFeatures       Json
+  profileFeatureVector  Float[]
+  popularityScore       Float?
+  analysisReports       AnalysisReport[]
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@index([genre])
+}
+
+model AnalysisReport {
+  id                  String         @id @default(cuid())
+  uploadedTrackId     String
+  trendClusterId      String?
+  closestArtistId     String?
+  version             Int            @default(1)
+  trendScore          Float
+  confidenceScore     Float?
+  summary             String?
+  insights            Json
+  scoringBreakdown    Json
+  generatedAt         DateTime       @default(now())
+  uploadedTrack       UploadedTrack  @relation(fields: [uploadedTrackId], references: [id], onDelete: Cascade)
+  trendCluster        TrendCluster?  @relation(fields: [trendClusterId], references: [id], onDelete: SetNull)
+  closestArtist       ArtistProfile? @relation(fields: [closestArtistId], references: [id], onDelete: SetNull)
+  usageEvents         UsageEvent[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  @@index([uploadedTrackId, generatedAt])
+  @@index([trendClusterId])
+  @@index([closestArtistId])
+}
+
+model UsageEvent {
+  id               String          @id @default(cuid())
+  userId           String
+  uploadedTrackId  String?
+  analysisReportId String?
+  eventType        UsageEventType
+  quantity         Int             @default(1)
+  metadata         Json?
+  occurredAt       DateTime        @default(now())
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  uploadedTrack    UploadedTrack?  @relation(fields: [uploadedTrackId], references: [id], onDelete: SetNull)
+  analysisReport   AnalysisReport? @relation(fields: [analysisReportId], references: [id], onDelete: SetNull)
+  createdAt        DateTime        @default(now())
+
+  @@index([userId, occurredAt])
+  @@index([eventType, occurredAt])
+}
+
+enum ProcessingStatus {
   PENDING
+  PROCESSING
   ANALYZED
   FAILED
+}
+
+enum SubscriptionPlan {
+  FREE
+  STARTER
+  PRO
+  TEAM
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum UsageEventType {
+  TRACK_UPLOAD
+  ANALYSIS_REQUESTED
+  ANALYSIS_COMPLETED
+  DASHBOARD_VIEWED
+  REPORT_EXPORTED
 }
