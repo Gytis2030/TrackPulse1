@@ -7,6 +7,20 @@
   "scripts": {
     "dev:frontend": "npm run dev --workspace frontend",
     "lint": "npm run lint --workspace frontend",
-    "build": "npm run build --workspace frontend"
+    "build": "npm run build --workspace frontend",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.7.0",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "prisma": "^6.7.0"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }
